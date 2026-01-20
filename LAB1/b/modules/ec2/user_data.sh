@@ -1,8 +1,11 @@
 #!/bin/bash
 dnf update -y
-dnf install -y python3-pip
+
+# 1. Install System Dependencies & CloudWatch Agent
+dnf install -y python3-pip git mariadb105 amazon-cloudwatch-agent
 pip3 install flask pymysql boto3
 
+#install rdsapp
 mkdir -p /opt/rdsapp
 cat >/opt/rdsapp/app.py <<'PY'
 import json
@@ -104,6 +107,8 @@ After=network.target
 WorkingDirectory=/opt/rdsapp
 Environment=SECRET_ID=lab-1b/rds/mysql
 ExecStart=/usr/bin/python3 /opt/rdsapp/app.py
+StandardOutput=append:/var/log/rdsapp.log
+StandardError=append:/var/log/rdsapp.log
 Restart=always
 
 [Install]
@@ -113,3 +118,31 @@ SERVICE
 systemctl daemon-reload
 systemctl enable rdsapp
 systemctl start rdsapp
+
+# 2. Configure CloudWatch Agent 
+# Tells the Agent to watch the app log file and pass it to AWS API 
+cat > /opt/aws/amazon-cloudwatch-agent/bin/config.json <<'EOF'
+{
+  "agent": {
+    "metrics_collection_interval": 60,
+    "run_as_user": "root"
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/rdsapp.log",
+            "log_group_name": "/aws/ec2/lab-rds-app",
+            "log_stream_name": "{instance_id}",
+            "retention_in_days": 7
+          }
+        ]
+      }
+    }
+  }
+}
+EOF
+# 3. Start the Agent 
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json
+

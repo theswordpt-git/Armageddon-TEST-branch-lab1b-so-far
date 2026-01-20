@@ -3,7 +3,8 @@
 
 # ================= CONFIGURATION =================
 AWS_REGION="ap-northeast-1"
-EC2_PUBLIC_IP="13.230.223.174"  # Your EC2 IP
+EC2_PUBLIC_IP="IP.ADDR.ESS"  # Your EC2 IP
+INSTANCE_ID="i-12345678abcde" #Your Instance ID
 # =================================================
 
 echo "🔴 === INCIDENT RESPONSE - DEBUG MODE ==="
@@ -162,7 +163,7 @@ echo ""
 
 echo "EC2 Status:"
 aws ec2 describe-instances \
-  --instance-ids "i-038c0094823165402" \
+  --instance-ids $INSTANCE_ID \
   --query "Reservations[0].Instances[0].[State.Name,PublicIpAddress]" \
   --output table 2>/dev/null || echo "Failed to get EC2 status"
 echo ""

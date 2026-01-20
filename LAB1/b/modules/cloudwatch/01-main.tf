@@ -38,7 +38,8 @@ resource "aws_cloudwatch_metric_alarm" "db_failure" {
 
 resource "aws_cloudwatch_log_metric_filter" "db_errors" {
   name           = "DBConnectionErrors"
-  pattern        = "CRITICAL"
+  #pattern        = "CRITICAL"
+  pattern        = "ERROR"
   log_group_name = aws_cloudwatch_log_group.app_logs.name
 
   metric_transformation {
